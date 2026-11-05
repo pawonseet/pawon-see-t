@@ -1,0 +1,51 @@
+
+name: Extract Pawon See T Website
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract website ZIP
+        run: |
+          ZIP_FILE=$(find . -maxdepth 1 -type f -iname "*.zip" -print -quit)
+
+          if [ -z "$ZIP_FILE" ]; then
+            echo "File ZIP tidak ditemukan."
+            exit 1
+          fi
+
+          mkdir -p "$RUNNER_TEMP/pawon-website"
+          unzip -q "$ZIP_FILE" -d "$RUNNER_TEMP/pawon-website"
+
+          PROJECT_DIR="$RUNNER_TEMP/pawon-website/Pawon_See_T_Web"
+
+          if [ ! -d "$PROJECT_DIR" ]; then
+            echo "Folder website tidak ditemukan."
+            exit 1
+          fi
+
+          cp -R "$PROJECT_DIR"/. .
+          rm -f "$ZIP_FILE"
+
+      - name: Save extracted files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "Extract Pawon See T website"
+            git push
+          fi
